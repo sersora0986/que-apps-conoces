@@ -24,6 +24,7 @@
   --si:#13803f; --si-ink:#ffffff; --si-soft:#e1f4e8;
   --no:#b42318; --no-ink:#ffffff; --no-soft:#fbe7e4;
   --ic-bg:#e3e9ef;
+  --rel:#0b6446; --rel-soft:#d4f0e3; --upd:#1a5791; --upd-soft:#dbe9f7;
   --display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --gutter-l:max(16px,env(safe-area-inset-left,0px));
@@ -34,13 +35,13 @@
   --accent:#6cb2e8; --accent-ink:#06192a; --accent-soft:#143049;
   --si:#45d07f; --si-ink:#04210f; --si-soft:#10301f;
   --no:#ff8a7a; --no-ink:#2a0905; --no-soft:#3a1914;
-  --ic-bg:#1d2a37; color-scheme:dark}}
+  --ic-bg:#1d2a37; --rel:#6ee7b7; --rel-soft:#0f3326; --upd:#9cc9fb; --upd-soft:#14304d; color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#0b1219; --surface:#131d27; --ink:#e3ebf2; --muted:#8fa1b2; --line:#233140;
   --accent:#6cb2e8; --accent-ink:#06192a; --accent-soft:#143049;
   --si:#45d07f; --si-ink:#04210f; --si-soft:#10301f;
   --no:#ff8a7a; --no-ink:#2a0905; --no-soft:#3a1914;
-  --ic-bg:#1d2a37; color-scheme:dark}
+  --ic-bg:#1d2a37; --rel:#6ee7b7; --rel-soft:#0f3326; --upd:#9cc9fb; --upd-soft:#14304d; color-scheme:dark}
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -84,8 +85,11 @@ main .in{padding-block:14px 190px}
 .meta{min-width:0;display:grid;gap:1px}
 .nm{font-weight:600;font-size:15.5px;line-height:1.25;overflow-wrap:anywhere}
 .sub{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dates{display:flex;flex-wrap:wrap;column-gap:10px;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.dates b{font-weight:600;color:var(--ink)}
+.dates{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:4px}
+.dt{display:inline-flex;gap:4px;align-items:baseline;border-radius:6px;padding:2px 7px;font-size:12px;line-height:1.35;white-space:nowrap;font-variant-numeric:tabular-nums}
+.dt b{font-weight:700}
+.dt-rel{background:var(--rel-soft);color:var(--rel)}
+.dt-upd{background:var(--upd-soft);color:var(--upd)}
 .vote{display:flex;gap:6px}
 .vote button{width:46px;height:46px;border-radius:12px;border:1.5px solid var(--line);background:transparent;font-size:21px;font-weight:700;line-height:1;color:var(--muted);cursor:pointer;display:grid;place-items:center;transition:background-color .12s,border-color .12s,color .12s,transform .12s}
 .vote button:active{transform:scale(.92)}
@@ -231,8 +235,8 @@ function iconStyle(i){
 function sub(a){ return esc(a[1]) + (a[1] && a[3] ? ' · ' : '') + (a[3] ? a[3] + ' descargas' : ''); }
 function dates(a){
   const p = [];
-  if (a[4]) p.push('<span>Salió <b>' + esc(a[4]) + '</b></span>');
-  if (a[5]) p.push('<span>Actualizada <b>' + esc(a[5]) + '</b></span>');
+  if (a[4]) p.push('<span class="dt dt-rel">Salida <b>' + esc(a[4]) + '</b></span>');
+  if (a[5]) p.push('<span class="dt dt-upd">Actualización <b>' + esc(a[5]) + '</b></span>');
   return p.length ? '<span class="dates">' + p.join('') + '</span>' : '';
 }
 
