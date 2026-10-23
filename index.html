@@ -176,6 +176,7 @@ main .in{padding-block:14px 190px}
         <option value="dl">Más descargadas</option>
         <option value="rel">Salieron hace poco</option>
         <option value="upd">Actualizadas hace poco</option>
+        <option value="new">Agregadas a la encuesta</option>
       </select>
     </div>
     <div class="chips" id="chips" role="group" aria-label="Categoría"></div>
@@ -277,7 +278,7 @@ function dates(a){
 /* ---------- Encuesta ---------- */
 const nameEl = $('nombre'), q = $('q'), showEl = $('show'), ordenEl = $('orden'), list = $('list'), more = $('more');
 const ORDEN_TXT = {dl: 'de la más descargada a la menos', rel: 'las que salieron más recientemente primero',
-                   upd: 'las actualizadas más recientemente primero'};
+                   upd: 'las actualizadas más recientemente primero', new: 'las últimas que entraron a la encuesta primero'};
 let cat = -1, view = [], shown = 0;
 nameEl.value = st.n;
 
@@ -331,10 +332,12 @@ function refresh(){
   }
   shown = 0; list.innerHTML = '';
   if (!view.length) list.innerHTML = '<li class="empty">No hay apps con ese filtro.</li>';
-  // Orden: por descargas (el de la lista) o por fecha de salida / ultima actualizacion (a[10], a[11]);
-  // las que no tienen fecha (solo web) van al final
+  // Orden: por descargas (el de la lista), por numero fijo (a[9]: crece a medida que entran apps a la encuesta)
+  // o por fecha de salida / ultima actualizacion (a[10], a[11]); las que no tienen fecha (solo web) van al final
   const orden = ordenEl.value;
-  if (orden !== 'dl') {
+  if (orden === 'new') {
+    view.sort((x, y) => A[y][9] - A[x][9]);
+  } else if (orden !== 'dl') {
     const c = orden === 'rel' ? 10 : 11;
     view.sort((x, y) => (A[y][c] || 0) - (A[x][c] || 0) || x - y);
   }
