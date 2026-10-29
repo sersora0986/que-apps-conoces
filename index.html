@@ -76,6 +76,12 @@ input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none}
 .chips::-webkit-scrollbar{display:none}
 .chip{flex:0 0 auto;border:1.5px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 13px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap}
 .chip[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+/* En la PC (con mouse) se ve la barra de las categorias, para correrla y llegar a todas */
+@media (hover:hover) and (pointer:fine){
+  .chips{scrollbar-width:thin;scrollbar-color:var(--muted) var(--line);padding-bottom:6px}
+  .chips::-webkit-scrollbar{display:block;height:8px}
+  .chips::-webkit-scrollbar-track{background:var(--line);border-radius:999px}
+  .chips::-webkit-scrollbar-thumb{background:var(--muted);border-radius:999px}}
 
 /* Lista */
 main .in{padding-block:14px 190px}
