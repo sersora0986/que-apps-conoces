@@ -161,7 +161,7 @@ main .in{padding-block:14px 190px}
   <div class="in">
     <p class="eyebrow">Encuesta rápida · 1.153 apps</p>
     <h1>¿Qué apps conocés?</h1>
-    <p class="lead">Billeteras, bancos, cripto, dólares e inversiones en las que podés abrir una cuenta desde Argentina, de la más descargada a la menos. Tocá <span class="mk mk-si" aria-label="tilde">✓</span> si la conocés y <span class="mk mk-no" aria-label="cruz">✗</span> si no. Si tocás el nombre, se abre la app en la tienda. <b>No hace falta marcarlas todas</b>: cuando te canses, mandame lo que marcaste por WhatsApp.</p>
+    <p class="lead">Billeteras, bancos, cripto, dólares e inversiones en las que podés abrir una cuenta desde Argentina, de la más descargada a la menos. Tocá <span class="mk mk-si" aria-label="tilde">✓</span> si la conocés y <span class="mk mk-no" aria-label="cruz">✗</span> si no. Si tocás el nombre, se abre la app en la tienda. <b>No hace falta marcarlas todas</b>: cuando te canses, tocá <b>Enviar respuestas</b> abajo (si te olvidás, lo que marcaste me llega igual al salir de la página).</p>
     <div class="who">
       <label for="nombre">Tu nombre</label>
       <input type="text" id="nombre" autocomplete="given-name" maxlength="40" placeholder="Para saber quién respondió">
@@ -256,11 +256,14 @@ const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 function load(k){ try { const r = localStorage.getItem(k); return r ? JSON.parse(r) : null; } catch(e) { return null; } }
 function store(k, v){ try { localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); } catch(e) {} }
 
-let st = {n:'', m:{}};
+let st = {n:'', m:{}, d:''};
 // La version anterior (D.legado) guardaba por posicion, que en esa version coincide con el numero fijo
 const saved = load(KEY) || load('qac:' + D.legado);
-if (saved && typeof saved === 'object') st = {n: String(saved.n || ''), m: (saved.m && typeof saved.m === 'object') ? saved.m : {}};
+if (saved && typeof saved === 'object') st = {n: String(saved.n || ''), m: (saved.m && typeof saved.m === 'object') ? saved.m : {}, d: String(saved.d || '')};
 let saveT; function save(){ clearTimeout(saveT); saveT = setTimeout(() => store(KEY, st), 250); }
+// st.d distingue a quien no puso nombre: sus marcas llegan como "Sin nombre <d>" y no se mezclan con las de otro
+if (!st.d) { st.d = Math.random().toString(36).slice(2, 6); save(); }
+function quien(){ return st.n || 'Sin nombre ' + st.d; }
 
 function iconStyle(i){
   const s = Math.floor(i / D.per), p = i % D.per, c = p % D.cols, r = Math.floor(p / D.cols);
@@ -404,7 +407,7 @@ function message(){
 }
 function codigo(){
   const {k, n} = lists();
-  return '[[AP2.' + toHex(st.n || 'Sin nombre') + '.' + enc(k.slice()) + '.' + enc(n.slice()) + ']]';
+  return '[[AP2.' + toHex(quien()) + '.' + enc(k.slice()) + '.' + enc(n.slice()) + ']]';
 }
 const wa = $('wa');
 function dock(){
@@ -424,7 +427,7 @@ function ready(){
   if (!k.length && !n.length) { hint('Marcá al menos una app con ✓ o ✗ antes de mandar.'); return false; }
   return true;
 }
-wa.addEventListener('click', e => { if (!ready()) { e.preventDefault(); return; } hint('Elegí el chat conmigo y mandá el mensaje.', true); });
+wa.addEventListener('click', e => { if (!ready()) { e.preventDefault(); return; } deFondo(); hint('Elegí el chat conmigo y mandá el mensaje.', true); });
 $('copy').addEventListener('click', () => {
   if (!ready()) return;
   const t = message(), box = $('copybox'), ta = $('copytxt');
@@ -435,23 +438,40 @@ $('copy').addEventListener('click', () => {
 });
 
 /* ---------- Envío a la planilla (formulario de Google) ---------- */
-// La respuesta de Google llega opaca (no-cors): si el pedido sale sin error de red, se da por enviado
-const send = $('send');
+// La respuesta de Google llega opaca (no-cors): si el pedido sale sin error de red, se da por enviado.
+// Mucha gente marca y se va sin tocar ningun boton, o manda solo por WhatsApp: por eso las marcas tambien llegan
+// solas al salir de la pagina o al tocar WhatsApp, si cambiaron desde el ultimo envio (SKEY guarda su codigo)
+const send = $('send'), SKEY = 'qac2-enviado';
+function cuerpo(){
+  const {k} = lists(), body = new FormData();
+  body.append(D.form.nombre, quien());
+  body.append(D.form.conocidas, k.map(id => A[POS.get(id)][0]).join('\n') || '(ninguna)');
+  body.append(D.form.codigo, codigo());
+  return body;
+}
+function deFondo(){
+  if (!D.form) return;
+  const {k, n} = lists(), c = codigo();
+  if (!k.length && !n.length) return;
+  let ultimo = ''; try { ultimo = localStorage.getItem(SKEY) || ''; } catch(e) {}
+  if (c === ultimo) return;
+  // sendBeacon sigue aunque se cierre la pestaña o se pase a otra app
+  try { if (navigator.sendBeacon(D.form.url, cuerpo())) store(SKEY, c); } catch(e) {}
+}
 if (D.form) {
   send.hidden = false; $('copy').hidden = true;
   wa.classList.replace('btn-main', 'btn-alt'); wa.textContent = 'WhatsApp';
   send.addEventListener('click', () => {
     if (!ready()) return;
-    const {k} = lists(), body = new FormData();
-    body.append(D.form.nombre, st.n);
-    body.append(D.form.conocidas, k.map(id => A[POS.get(id)][0]).join('\n') || '(ninguna)');
-    body.append(D.form.codigo, codigo());
+    const c = codigo();
     send.disabled = true; send.textContent = 'Enviando…';
-    fetch(D.form.url, {method: 'POST', mode: 'no-cors', body})
-      .then(() => hint('¡Listo! Tus respuestas llegaron. Si marcás más, podés volver a enviar.', true))
+    fetch(D.form.url, {method: 'POST', mode: 'no-cors', body: cuerpo()})
+      .then(() => { store(SKEY, c); hint('¡Listo! Tus respuestas llegaron. Si marcás más, podés volver a enviar.', true); })
       .catch(() => hint('No se pudo enviar. Revisá la conexión o mandalas por WhatsApp.'))
       .finally(() => { send.disabled = false; send.textContent = 'Enviar respuestas'; });
   });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') deFondo(); });
+  addEventListener('pagehide', deFondo);
 }
 
 /* ---------- Pasar la encuesta ---------- */
